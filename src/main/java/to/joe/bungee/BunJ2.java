@@ -13,6 +13,7 @@ import net.md_5.bungee.Permission;
 import net.md_5.bungee.UserConnection;
 import net.md_5.bungee.plugin.JavaPlugin;
 import net.md_5.bungee.plugin.LoginEvent;
+import net.md_5.bungee.plugin.ServerConnectEvent;
 
 import to.joe.bungee.commands.CommandBanIP;
 import to.joe.bungee.commands.CommandIP;
@@ -78,6 +79,13 @@ public class BunJ2 extends JavaPlugin {
                 }
             }
         }, 1);
+    }
+
+    @Override
+    public void onServerConnect(ServerConnectEvent event) {
+        if (this.conf.adminonlyservers.contains(event.getServer()) && (BungeeCord.instance.config.getPermission(event.getConnection()) == Permission.DEFAULT)) {
+            event.setNewServer(null); // Setting to null means no redirect, unless new connection. In that case, default server.
+        }
     }
 
     private void check(LoginEvent event, boolean isUsername) {

@@ -3,7 +3,9 @@ package to.joe.bungee;
 import java.io.*;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
+import java.util.ArrayList;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 
 import net.md_5.bungee.Logger;
@@ -28,6 +30,12 @@ public class Conf {
     public String disconnectbanned = "You are banned";
     public String disconnectipbanned = "You are banned";
     public String disconnectsqlfail = "System failure. Retry in 1 minute";
+    public List<String> adminonlyservers = new ArrayList<String>() {
+        private static final long serialVersionUID = 5000L;
+        {
+            this.add("fun");
+        }
+    };
 
     public void load() {
         try {
