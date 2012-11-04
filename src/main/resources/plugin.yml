@@ -1,0 +1,4 @@
+name: BunJ2
+main: to.joe.bungee.BunJ2
+version: '${project.version}'
+author: mbaxter
