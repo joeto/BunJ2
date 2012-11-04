@@ -17,6 +17,7 @@ import net.md_5.bungee.plugin.ServerConnectEvent;
 
 import to.joe.bungee.commands.CommandBanIP;
 import to.joe.bungee.commands.CommandIP;
+import to.joe.bungee.commands.CommandReloadAdmins;
 import to.joe.bungee.commands.CommandUnbanIP;
 
 public class BunJ2 extends JavaPlugin {
@@ -37,6 +38,10 @@ public class BunJ2 extends JavaPlugin {
     @Override
     public void onDisable() {
         this.fiveMins.cancel();
+        BungeeCord.instance.commandMap.remove("banip");
+        BungeeCord.instance.commandMap.put("ip", new net.md_5.bungee.command.CommandIP());
+        BungeeCord.instance.commandMap.remove("unbanip");
+        BungeeCord.instance.commandMap.remove("reloadadmins");
     }
 
     @Override
@@ -45,6 +50,7 @@ public class BunJ2 extends JavaPlugin {
         BungeeCord.instance.commandMap.put("banip", new CommandBanIP());
         BungeeCord.instance.commandMap.put("ip", new CommandIP());
         BungeeCord.instance.commandMap.put("unbanip", new CommandUnbanIP());
+        BungeeCord.instance.commandMap.put("reloadadmins", new CommandReloadAdmins(this));
         try {
             SQLHandler.start(this.conf.host, this.conf.port, this.conf.user, this.conf.pass, this.conf.db);
         } catch (final Exception e) {
