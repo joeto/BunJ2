@@ -101,6 +101,10 @@ public class BunJ2 extends JavaPlugin {
 
     @Override
     public void onServerConnect(ServerConnectEvent event) {
+        if (event.isFirstTime()) {
+            event.setNewServer(BungeeCord.instance.config.defaultServerName);
+            return;
+        }
         if (this.conf.adminonlyservers.contains(event.getServer()) && (BungeeCord.instance.config.getPermission(event.getConnection()) == Permission.DEFAULT)) {
             event.setNewServer(null); // Setting to null means no redirect, unless new connection. In that case, default server.
         }
