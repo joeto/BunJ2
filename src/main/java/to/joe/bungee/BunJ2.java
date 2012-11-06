@@ -15,15 +15,13 @@ import net.md_5.bungee.plugin.JavaPlugin;
 import net.md_5.bungee.plugin.LoginEvent;
 import net.md_5.bungee.plugin.ServerConnectEvent;
 
-import to.joe.bungee.commands.CommandBanIP;
-import to.joe.bungee.commands.CommandIP;
-import to.joe.bungee.commands.CommandReloadAdmins;
-import to.joe.bungee.commands.CommandUnbanIP;
+import to.joe.bungee.commands.*;
 
 public class BunJ2 extends JavaPlugin {
 
     private final Conf conf = new Conf(); // My own adaptation of a yaml config. VERY simple.
     private final Timer fiveMins = new Timer(); // I schedule a task that runs every 5 minutes!
+    public String normalMotd = null;
 
     public void adminReload() {
         final Map<Permission, List<String>> map = SQLHandler.loadAdmins();
@@ -35,6 +33,10 @@ public class BunJ2 extends JavaPlugin {
         }
     }
 
+    public Conf getConf() {
+        return this.conf;
+    }
+
     @Override
     public void onDisable() {
         this.fiveMins.cancel();
@@ -42,15 +44,25 @@ public class BunJ2 extends JavaPlugin {
         BungeeCord.instance.commandMap.put("ip", new net.md_5.bungee.command.CommandIP());
         BungeeCord.instance.commandMap.remove("unbanip");
         BungeeCord.instance.commandMap.remove("reloadadmins");
+        BungeeCord.instance.commandMap.put("glist", new net.md_5.bungee.command.CommandList());
+        BungeeCord.instance.commandMap.put("motd", new net.md_5.bungee.command.CommandMotd());
+        BungeeCord.instance.commandMap.put("alert", new net.md_5.bungee.command.CommandAlert());
+        BungeeCord.instance.commandMap.put("server", new net.md_5.bungee.command.CommandServer());
+        BungeeCord.instance.config.motd = this.normalMotd;
     }
 
     @Override
     public void onEnable() {
+        this.normalMotd = BungeeCord.instance.config.motd;
         this.conf.load();
         BungeeCord.instance.commandMap.put("banip", new CommandBanIP());
         BungeeCord.instance.commandMap.put("ip", new CommandIP());
         BungeeCord.instance.commandMap.put("unbanip", new CommandUnbanIP());
         BungeeCord.instance.commandMap.put("reloadadmins", new CommandReloadAdmins(this));
+        BungeeCord.instance.commandMap.put("glist", new CommandList());
+        BungeeCord.instance.commandMap.put("motd", new CommandMotd(this));
+        BungeeCord.instance.commandMap.put("alert", new CommandAlert());
+        BungeeCord.instance.commandMap.put("server", new CommandServer(this));
         try {
             SQLHandler.start(this.conf.host, this.conf.port, this.conf.user, this.conf.pass, this.conf.db);
         } catch (final Exception e) {
