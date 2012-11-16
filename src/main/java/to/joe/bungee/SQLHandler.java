@@ -40,12 +40,11 @@ public class SQLHandler {
             }
             if (ip != null) {
                 list.add(ChatColor.AQUA + "IPLookup on " + ChatColor.WHITE + username + ChatColor.AQUA + "\'s last IP: " + ChatColor.WHITE + ip);
-                final ArrayList<String> nameDates = new ArrayList<String>();
                 statement = con.getConnection().prepareStatement("SELECT `Name`, `Time` FROM `alias` WHERE `IP`=? ORDER BY `Time` DESC LIMIT 5");
                 statement.setString(1, ip);
                 resultset = statement.executeQuery();
                 while (resultset.next()) {
-                    nameDates.add(ChatColor.AQUA + resultset.getString("Name") + " : " + ChatColor.BLUE + new Date(resultset.getTimestamp("Time").getTime()));
+                    list.add(ChatColor.AQUA + resultset.getString("Name") + " : " + ChatColor.BLUE + new Date(resultset.getTimestamp("Time").getTime()));
                 }
             }
             con.myWorkHereIsDone();
