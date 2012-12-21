@@ -70,8 +70,8 @@ public class SQLHandler {
     }
 
     public static Map<Permission, List<String>> loadAdmins() {
-        final List<String> admins = new ArrayList<String>();
-        final List<String> srstaff = new ArrayList<String>();
+        final List<String> admins = new CIAdminList();
+        final List<String> srstaff = new CIAdminList();
         try {
             final SQLConnection con = SQLHandler.instance().manager.getQueryConnection();
             final PreparedStatement query = con.getConnection().prepareStatement("SELECT `name`,`group` from `users` where `group`='admins' or `group`='srstaff';");
