@@ -1,41 +1,32 @@
 package to.joe.bungee.commands;
 
-import java.util.Collection;
+import java.util.Set;
 
-import to.joe.bungee.BunJ2;
-
-import net.md_5.bungee.BungeeCord;
-import net.md_5.bungee.ChatColor;
-import net.md_5.bungee.Permission;
-import net.md_5.bungee.UserConnection;
-import net.md_5.bungee.command.Command;
-import net.md_5.bungee.command.CommandSender;
+import net.md_5.bungee.api.ChatColor;
+import net.md_5.bungee.api.CommandSender;
+import net.md_5.bungee.api.ProxyServer;
+import net.md_5.bungee.api.connection.ProxiedPlayer;
+import net.md_5.bungee.api.plugin.Command;
 
 /**
  * Command to list and switch a player between available servers.
  */
 public class CommandServer extends Command {
 
-    private final BunJ2 j2;
-
-    public CommandServer(BunJ2 j2) {
-        this.j2 = j2;
+    public CommandServer() {
+        super("server", "j2.default");
     }
 
     @Override
     public void execute(CommandSender sender, String[] args) {
-        if (!(sender instanceof UserConnection)) {
+        if (!(sender instanceof ProxiedPlayer)) {
             return;
         }
-        final UserConnection con = (UserConnection) sender;
-        final Collection<String> servers = BungeeCord.instance.config.servers.keySet();
-        final boolean admin = this.getPermission(sender) != Permission.DEFAULT;
+        final ProxiedPlayer con = (ProxiedPlayer) sender;
+        final Set<String> servers = ProxyServer.getInstance().getServers().keySet();
         if (args.length <= 0) {
             final StringBuilder serverList = new StringBuilder();
             for (final String server : servers) {
-                if (!admin && this.j2.getConf().adminonlyservers.contains(server)) {
-                    continue;
-                }
                 serverList.append(server);
                 serverList.append(", ");
             }
@@ -44,10 +35,10 @@ public class CommandServer extends Command {
             con.sendMessage(ChatColor.GOLD + "Join them with: /server " + ChatColor.YELLOW + "name");
         } else {
             final String server = args[0];
-            if (!servers.contains(server) || (!admin && this.j2.getConf().adminonlyservers.contains(server))) {
+            if (!servers.contains(server)) {
                 con.sendMessage(ChatColor.RED + "The specified server does not exist");
             } else {
-                con.connect(server);
+                con.connect(ProxyServer.getInstance().getServerInfo(server));
             }
         }
     }

@@ -4,7 +4,7 @@ import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
 
-import net.md_5.bungee.Logger;
+import net.md_5.bungee.api.ProxyServer;
 
 public class SQLManager {
 
@@ -67,7 +67,7 @@ public class SQLManager {
             }
             if ((System.currentTimeMillis() - 5000) > start) {
                 test.reset();
-                Logger.$().info("[BunJ2] Something went funky with SQL. Resetting a connection");
+                ProxyServer.getInstance().getLogger().info("[BunJ2] Something went funky with SQL. Resetting a connection");
                 con = test;
             }
             if (i++ == this.conCount) {
@@ -77,5 +77,4 @@ public class SQLManager {
         con.myTurn();
         return con;
     }
-
 }

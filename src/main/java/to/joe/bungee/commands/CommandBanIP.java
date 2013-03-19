@@ -4,23 +4,23 @@ import java.sql.SQLException;
 import java.util.Timer;
 import java.util.TimerTask;
 
-import net.md_5.bungee.BungeeCord;
-import net.md_5.bungee.ChatColor;
-import net.md_5.bungee.Permission;
-import net.md_5.bungee.UserConnection;
-import net.md_5.bungee.command.Command;
-import net.md_5.bungee.command.CommandSender;
+import net.md_5.bungee.api.ChatColor;
+import net.md_5.bungee.api.CommandSender;
+import net.md_5.bungee.api.ProxyServer;
+import net.md_5.bungee.api.connection.ProxiedPlayer;
+import net.md_5.bungee.api.plugin.Command;
 
 import to.joe.bungee.SQLHandler;
 import to.joe.bungee.Util;
 
 public class CommandBanIP extends Command {
 
+    public CommandBanIP() {
+        super("banip", "j2.admin", "ipban", "ban-ip");
+    }
+
     @Override
     public void execute(CommandSender sender, String[] args) {
-        if (this.getPermission(sender) == Permission.DEFAULT) {
-            return;
-        }
         if (args.length < 2) {
             sender.sendMessage(ChatColor.RED + "/banip [IP] [REASON]");
             return;
@@ -35,15 +35,15 @@ public class CommandBanIP extends Command {
                 public void run() {
                     try {
                         SQLHandler.banIP(target, reason, admin);
-                        for (final UserConnection con : BungeeCord.instance.connections.values()) {
-                            if (CommandBanIP.this.getPermission(con) != Permission.DEFAULT) {
+                        for (final ProxiedPlayer con : ProxyServer.getInstance().getPlayers()) {
+                            if (con.hasPermission("j2.admin")) {
                                 con.sendMessage(message);
                             }
                         }
                     } catch (final SQLException e) {
                         e.printStackTrace();
-                        for (final UserConnection con : BungeeCord.instance.connections.values()) {
-                            if (CommandBanIP.this.getPermission(con) != Permission.DEFAULT) {
+                        for (final ProxiedPlayer con : ProxyServer.getInstance().getPlayers()) {
+                            if (con.hasPermission("j2.admin")) {
                                 con.sendMessage("Failed to ban " + target);
                             }
                         }
@@ -51,7 +51,7 @@ public class CommandBanIP extends Command {
                 }
             }, 1);
         } else {
-            sender.sendMessage(net.md_5.bungee.ChatColor.RED + "Not a valid IP");
+            sender.sendMessage(ChatColor.RED + "Not a valid IP");
         }
     }
 }

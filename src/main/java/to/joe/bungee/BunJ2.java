@@ -3,33 +3,48 @@ package to.joe.bungee;
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
 import java.sql.SQLException;
-import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.Timer;
 import java.util.TimerTask;
 
-import net.md_5.bungee.BungeeCord;
-import net.md_5.bungee.Permission;
-import net.md_5.bungee.UserConnection;
-import net.md_5.bungee.plugin.JavaPlugin;
-import net.md_5.bungee.plugin.LoginEvent;
-import net.md_5.bungee.plugin.ServerConnectEvent;
+import net.md_5.bungee.api.ProxyServer;
+import net.md_5.bungee.api.connection.ProxiedPlayer;
+import net.md_5.bungee.api.event.LoginEvent;
+import net.md_5.bungee.api.event.PostLoginEvent;
+import net.md_5.bungee.api.plugin.Plugin;
 
-import to.joe.bungee.commands.*;
+import com.google.common.eventbus.Subscribe;
 
-public class BunJ2 extends JavaPlugin {
+import to.joe.bungee.commands.CommandBanIP;
+import to.joe.bungee.commands.CommandIP;
+import to.joe.bungee.commands.CommandList;
+import to.joe.bungee.commands.CommandReloadAdmins;
+import to.joe.bungee.commands.CommandServer;
+import to.joe.bungee.commands.CommandUnbanIP;
+
+public class BunJ2 extends Plugin {
 
     private final Conf conf = new Conf(); // My own adaptation of a yaml config. VERY simple.
     private final Timer fiveMins = new Timer(); // I schedule a task that runs every 5 minutes!
-    public String normalMotd = null;
+
+    private Set<String> admins;
+    private Set<String> srstaff;
 
     public void adminReload() {
-        final Map<Permission, List<String>> map = SQLHandler.loadAdmins();
-        if (map.containsKey(Permission.ADMIN)) {
-            BungeeCord.instance.config.admins = map.get(Permission.ADMIN);
-        }
-        if (map.containsKey(Permission.MODERATOR)) {
-            BungeeCord.instance.config.moderators = map.get(Permission.MODERATOR);
+        final Map<Admin, Set<String>> map = SQLHandler.loadAdmins();
+        this.admins = map.get(Admin.ADMIN);
+        this.srstaff = map.get(Admin.SRSTAFF);
+        for (final ProxiedPlayer con : ProxyServer.getInstance().getPlayers()) {
+            con.removeGroups("admin", "srstaff", "default");
+            final String name = con.getName().toLowerCase();
+            if (this.srstaff.contains(name)) {
+                con.addGroups("srstaff");
+            } else if (this.admins.contains(name)) {
+                con.addGroups("admin");
+            } else {
+                con.addGroups("default");
+            }
         }
     }
 
@@ -40,29 +55,24 @@ public class BunJ2 extends JavaPlugin {
     @Override
     public void onDisable() {
         this.fiveMins.cancel();
-        BungeeCord.instance.commandMap.remove("banip");
-        BungeeCord.instance.commandMap.put("ip", new net.md_5.bungee.command.CommandIP());
-        BungeeCord.instance.commandMap.remove("unbanip");
-        BungeeCord.instance.commandMap.remove("reloadadmins");
-        BungeeCord.instance.commandMap.put("glist", new net.md_5.bungee.command.CommandList());
-        BungeeCord.instance.commandMap.put("motd", new net.md_5.bungee.command.CommandMotd());
-        BungeeCord.instance.commandMap.put("alert", new net.md_5.bungee.command.CommandAlert());
-        BungeeCord.instance.commandMap.put("server", new net.md_5.bungee.command.CommandServer());
-        BungeeCord.instance.config.motd = this.normalMotd;
     }
+
+    private final CommandBanIP banip = new CommandBanIP();
+    private final CommandIP ip = new CommandIP();
+    private final CommandUnbanIP unbanip = new CommandUnbanIP();
+    private final CommandReloadAdmins reload = new CommandReloadAdmins(this);
+    private final CommandList list = new CommandList();
+    private final CommandServer server = new CommandServer();
 
     @Override
     public void onEnable() {
-        this.normalMotd = BungeeCord.instance.config.motd;
         this.conf.load();
-        BungeeCord.instance.commandMap.put("banip", new CommandBanIP());
-        BungeeCord.instance.commandMap.put("ip", new CommandIP());
-        BungeeCord.instance.commandMap.put("unbanip", new CommandUnbanIP());
-        BungeeCord.instance.commandMap.put("reloadadmins", new CommandReloadAdmins(this));
-        BungeeCord.instance.commandMap.put("glist", new CommandList());
-        BungeeCord.instance.commandMap.put("motd", new CommandMotd(this));
-        BungeeCord.instance.commandMap.put("alert", new CommandAlert());
-        BungeeCord.instance.commandMap.put("server", new CommandServer(this));
+        ProxyServer.getInstance().getPluginManager().registerCommand(this, this.banip);
+        ProxyServer.getInstance().getPluginManager().registerCommand(this, this.ip);
+        ProxyServer.getInstance().getPluginManager().registerCommand(this, this.unbanip);
+        ProxyServer.getInstance().getPluginManager().registerCommand(this, this.reload);
+        ProxyServer.getInstance().getPluginManager().registerCommand(this, this.list);
+        ProxyServer.getInstance().getPluginManager().registerCommand(this, this.server);
         try {
             SQLHandler.start(this.conf.host, this.conf.port, this.conf.user, this.conf.pass, this.conf.db);
         } catch (final Exception e) {
@@ -78,16 +88,11 @@ public class BunJ2 extends JavaPlugin {
         }, 1, 60000);
     }
 
-    @Override
-    public void onHandshake(LoginEvent event) { // Before mc.net auth. Checking IP only. No need to check username yet, waste of a query.
-        this.check(event, false);
-    }
-
-    @Override
+    @Subscribe
     public void onLogin(LoginEvent event) {
-        this.check(event, true);
-        final String username = event.getUsername();
-        final String ip = event.getAddress().getHostAddress();
+        this.check(event);
+        final String username = event.getConnection().getName();
+        final String ip = event.getConnection().getAddress().getAddress().getHostAddress();
         new Timer().schedule(new TimerTask() {
             @Override
             public void run() {
@@ -99,33 +104,43 @@ public class BunJ2 extends JavaPlugin {
         }, 1);
     }
 
-    @Override
-    public void onServerConnect(ServerConnectEvent event) {
-        if (event.isFirstTime()) {
-            event.setNewServer(BungeeCord.instance.config.defaultServerName);
-            return;
-        }
-        if (this.conf.adminonlyservers.contains(event.getServer()) && (BungeeCord.instance.config.getPermission(event.getConnection()) == Permission.DEFAULT)) {
-            event.setNewServer(null); // Setting to null means no redirect, unless new connection. In that case, default server.
+    @Subscribe
+    public void onJoin(PostLoginEvent event) {
+        final ProxiedPlayer player = event.getPlayer();
+        if (this.srstaff.contains(player.getName().toLowerCase())) {
+            player.addGroups("srstaff");
+        } else if (this.admins.contains(player.getName().toLowerCase())) {
+            player.addGroups("admins");
+        } else {
+            player.addGroups("default");
         }
     }
 
-    private void check(LoginEvent event, boolean isUsername) {
+    private void check(LoginEvent event) {
         boolean fail = false;
+        boolean username = true;
+        boolean banned = false;
         try {
-            if (SQLHandler.isAllowed(isUsername ? event.getUsername() : event.getAddress().getHostAddress(), isUsername)) {
+            if (!SQLHandler.isAllowed(event.getConnection().getName(), true)) {
+                banned = true;
+            }
+            if (!SQLHandler.isAllowed(event.getConnection().getAddress().getAddress().getHostAddress(), false)) {
+                banned = true;
+                username = false;
+            }
+            if (!banned) {
                 return;
             }
         } catch (final Exception e) {
             fail = true;
         }
         event.setCancelled(true);
-        event.setCancelReason(fail ? this.conf.disconnectsqlfail : isUsername ? this.conf.disconnectbanned : this.conf.disconnectipbanned);
+        event.setCancelReason(fail ? this.conf.disconnectsqlfail : username ? this.conf.disconnectbanned : this.conf.disconnectipbanned);
     }
 
     private void cycle() {
         this.adminReload();
-        for (final UserConnection con : BungeeCord.instance.connections.values()) {
+        for (final ProxiedPlayer con : ProxyServer.getInstance().getPlayers()) {
             try {
                 if (!SQLHandler.isAllowed(con.getName(), true)) {
                     con.disconnect(this.conf.disconnectbanned);

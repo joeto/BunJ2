@@ -3,10 +3,15 @@ package to.joe.bungee;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
-import net.md_5.bungee.ChatColor;
-import net.md_5.bungee.Permission;
+import net.md_5.bungee.api.ChatColor;
 
 import to.joe.bungee.SQLManager.SQLConnection;
 
@@ -69,9 +74,9 @@ public class SQLHandler {
         return ret;
     }
 
-    public static Map<Permission, List<String>> loadAdmins() {
-        final List<String> admins = new CIAdminList();
-        final List<String> srstaff = new CIAdminList();
+    public static Map<Admin, Set<String>> loadAdmins() {
+        final Set<String> admins = new HashSet<String>();
+        final Set<String> srstaff = new HashSet<String>();
         try {
             final SQLConnection con = SQLHandler.instance().manager.getQueryConnection();
             final PreparedStatement query = con.getConnection().prepareStatement("SELECT `name`,`group` from `users` where `group`='admins' or `group`='srstaff';");
@@ -79,18 +84,19 @@ public class SQLHandler {
             if (resultSet != null) {
                 while (resultSet.next()) {
                     final String name = resultSet.getString("name").toLowerCase();
-                    admins.add(name);
                     if (resultSet.getString("group").equals("srstaff")) {
-                        srstaff.add(name);
+                        srstaff.add(name.toLowerCase());
+                    } else {
+                        admins.add(name.toLowerCase());
                     }
                 }
             }
             con.myWorkHereIsDone();
         } catch (final SQLException e) {
         }
-        final Map<Permission, List<String>> map = new HashMap<>();
-        map.put(Permission.MODERATOR, admins);
-        map.put(Permission.ADMIN, srstaff);
+        final Map<Admin, Set<String>> map = new HashMap<>();
+        map.put(Admin.ADMIN, admins);
+        map.put(Admin.SRSTAFF, srstaff);
         return map;
     }
 
@@ -155,5 +161,4 @@ public class SQLHandler {
             throw new RuntimeException("SQL connection failure!", e);
         }
     }
-
 }

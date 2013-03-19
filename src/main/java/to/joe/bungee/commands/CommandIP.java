@@ -4,22 +4,22 @@ import java.util.List;
 import java.util.Timer;
 import java.util.TimerTask;
 
-import net.md_5.bungee.BungeeCord;
-import net.md_5.bungee.ChatColor;
-import net.md_5.bungee.Permission;
-import net.md_5.bungee.UserConnection;
-import net.md_5.bungee.command.Command;
-import net.md_5.bungee.command.CommandSender;
+import net.md_5.bungee.api.ChatColor;
+import net.md_5.bungee.api.CommandSender;
+import net.md_5.bungee.api.ProxyServer;
+import net.md_5.bungee.api.connection.ProxiedPlayer;
+import net.md_5.bungee.api.plugin.Command;
 
 import to.joe.bungee.SQLHandler;
 
 public class CommandIP extends Command {
 
+    public CommandIP() {
+        super("ip", "j2.admin");
+    }
+
     @Override
     public void execute(CommandSender sender, String[] args) {
-        if (this.getPermission(sender) == Permission.DEFAULT) {
-            return;
-        }
         if (args.length < 1) {
             sender.sendMessage(ChatColor.RED + "/ip [user]");
             return;
@@ -31,7 +31,7 @@ public class CommandIP extends Command {
             @Override
             public void run() {
                 final List<String> list = SQLHandler.iplookup(username);
-                final UserConnection con = BungeeCord.instance.connections.get(senderName);
+                final ProxiedPlayer con = ProxyServer.getInstance().getPlayer(senderName);
                 if (con != null) {
                     for (final String line : list) {
                         con.sendMessage(line);

@@ -1,14 +1,16 @@
 package to.joe.bungee;
 
-import java.io.*;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.io.InputStream;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
-import java.util.ArrayList;
 import java.util.LinkedHashMap;
-import java.util.List;
 import java.util.Map;
 
-import net.md_5.bungee.Logger;
+import net.md_5.bungee.api.ProxyServer;
 
 import org.yaml.snakeyaml.DumperOptions;
 import org.yaml.snakeyaml.Yaml;
@@ -29,13 +31,7 @@ public class Conf {
     public String pass = "pass";
     public String disconnectbanned = "You are banned";
     public String disconnectipbanned = "You are banned";
-    public String disconnectsqlfail = "System failure. Retry in 1 minute";
-    public List<String> adminonlyservers = new ArrayList<String>() {
-        private static final long serialVersionUID = 5000L;
-        {
-            this.add("fun");
-        }
-    };
+    public String disconnectsqlfail = "Server error. Retry in 1 minute";
 
     public void load() {
         try {
@@ -62,15 +58,14 @@ public class Conf {
 
                         field.set(this, value);
 
-                        Logger.$().info(name + ": " + value);
                     } catch (final IllegalAccessException ex) {
-                        Logger.$().severe("Could not get BunJ2 config node: " + name);
+                        ProxyServer.getInstance().getLogger().severe("Could not get BunJ2 config node: " + name);
                     }
                 }
             }
 
         } catch (final IOException ex) {
-            Logger.$().severe("Could not load BunJ2 config!");
+            ProxyServer.getInstance().getLogger().severe("Could not load BunJ2 config!");
             ex.printStackTrace();
         }
     }
@@ -89,9 +84,8 @@ public class Conf {
                 this.yaml.dump(toSave, wr);
             }
         } catch (final IOException ex) {
-            Logger.$().severe("Could not save BunJ2 config file " + fileToSave);
+            ProxyServer.getInstance().getLogger().severe("Could not save BunJ2 config file " + fileToSave);
             ex.printStackTrace();
         }
     }
-
 }
