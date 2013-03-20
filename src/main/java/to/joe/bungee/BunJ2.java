@@ -17,6 +17,7 @@ import net.md_5.bungee.api.plugin.Plugin;
 
 import com.google.common.eventbus.Subscribe;
 
+import to.joe.bungee.commands.CommandAlert;
 import to.joe.bungee.commands.CommandBanIP;
 import to.joe.bungee.commands.CommandIP;
 import to.joe.bungee.commands.CommandList;
@@ -58,22 +59,16 @@ public class BunJ2 extends Plugin implements Listener {
         this.fiveMins.cancel();
     }
 
-    private final CommandBanIP banip = new CommandBanIP();
-    private final CommandIP ip = new CommandIP();
-    private final CommandUnbanIP unbanip = new CommandUnbanIP();
-    private final CommandReloadAdmins reload = new CommandReloadAdmins(this);
-    private final CommandList list = new CommandList();
-    private final CommandServer server = new CommandServer();
-
     @Override
     public void onEnable() {
         this.conf.load();
-        ProxyServer.getInstance().getPluginManager().registerCommand(this, this.banip);
-        ProxyServer.getInstance().getPluginManager().registerCommand(this, this.ip);
-        ProxyServer.getInstance().getPluginManager().registerCommand(this, this.unbanip);
-        ProxyServer.getInstance().getPluginManager().registerCommand(this, this.reload);
-        ProxyServer.getInstance().getPluginManager().registerCommand(this, this.list);
-        ProxyServer.getInstance().getPluginManager().registerCommand(this, this.server);
+        ProxyServer.getInstance().getPluginManager().registerCommand(this, new CommandBanIP());
+        ProxyServer.getInstance().getPluginManager().registerCommand(this, new CommandIP());
+        ProxyServer.getInstance().getPluginManager().registerCommand(this, new CommandUnbanIP());
+        ProxyServer.getInstance().getPluginManager().registerCommand(this, new CommandReloadAdmins(this));
+        ProxyServer.getInstance().getPluginManager().registerCommand(this, new CommandList());
+        ProxyServer.getInstance().getPluginManager().registerCommand(this, new CommandServer());
+        ProxyServer.getInstance().getPluginManager().registerCommand(this, new CommandAlert());
         ProxyServer.getInstance().getPluginManager().registerListener(this, this);
         try {
             SQLHandler.start(this.conf.host, this.conf.port, this.conf.user, this.conf.pass, this.conf.db);
