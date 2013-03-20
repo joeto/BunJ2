@@ -12,6 +12,7 @@ import net.md_5.bungee.api.ProxyServer;
 import net.md_5.bungee.api.connection.ProxiedPlayer;
 import net.md_5.bungee.api.event.LoginEvent;
 import net.md_5.bungee.api.event.PostLoginEvent;
+import net.md_5.bungee.api.plugin.Listener;
 import net.md_5.bungee.api.plugin.Plugin;
 
 import com.google.common.eventbus.Subscribe;
@@ -23,7 +24,7 @@ import to.joe.bungee.commands.CommandReloadAdmins;
 import to.joe.bungee.commands.CommandServer;
 import to.joe.bungee.commands.CommandUnbanIP;
 
-public class BunJ2 extends Plugin {
+public class BunJ2 extends Plugin implements Listener {
 
     private final Conf conf = new Conf(); // My own adaptation of a yaml config. VERY simple.
     private final Timer fiveMins = new Timer(); // I schedule a task that runs every 5 minutes!
@@ -73,6 +74,7 @@ public class BunJ2 extends Plugin {
         ProxyServer.getInstance().getPluginManager().registerCommand(this, this.reload);
         ProxyServer.getInstance().getPluginManager().registerCommand(this, this.list);
         ProxyServer.getInstance().getPluginManager().registerCommand(this, this.server);
+        ProxyServer.getInstance().getPluginManager().registerListener(this, this);
         try {
             SQLHandler.start(this.conf.host, this.conf.port, this.conf.user, this.conf.pass, this.conf.db);
         } catch (final Exception e) {
