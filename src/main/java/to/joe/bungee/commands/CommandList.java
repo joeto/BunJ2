@@ -21,11 +21,15 @@ public class CommandList extends Command {
     public void execute(CommandSender sender, String[] args) {
         final StringBuilder users = new StringBuilder();
         final Collection<ProxiedPlayer> connections = ProxyServer.getInstance().getPlayers();
-        for (final ProxiedPlayer con : connections) {
-            users.append(con.getName());
-            users.append(", ");
+        if (connections.size() > 0) {
+            for (final ProxiedPlayer con : connections) {
+                users.append(con.getName());
+                users.append(", ");
+            }
+            users.setLength(users.length() - 2);
+            sender.sendMessage(ChatColor.BLUE + "Currently online across all servers (" + connections.size() + "): " + ChatColor.RESET + users);
+        } else {
+            sender.sendMessage(ChatColor.RED + "Nobody home.");
         }
-        users.setLength(users.length() - 2);
-        sender.sendMessage(ChatColor.BLUE + "Currently online across all servers (" + connections.size() + "): " + ChatColor.RESET + users);
     }
 }
