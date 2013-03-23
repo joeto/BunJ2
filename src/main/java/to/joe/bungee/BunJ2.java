@@ -1,5 +1,6 @@
 package to.joe.bungee;
 
+import java.io.UnsupportedEncodingException;
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
 import java.sql.SQLException;
@@ -7,11 +8,16 @@ import java.util.Map;
 import java.util.Set;
 import java.util.Timer;
 import java.util.TimerTask;
+import java.util.concurrent.ConcurrentHashMap;
 
+import net.md_5.bungee.api.ChatColor;
 import net.md_5.bungee.api.ProxyServer;
+import net.md_5.bungee.api.config.ServerInfo;
 import net.md_5.bungee.api.connection.ProxiedPlayer;
 import net.md_5.bungee.api.event.LoginEvent;
+import net.md_5.bungee.api.event.PluginMessageEvent;
 import net.md_5.bungee.api.event.PostLoginEvent;
+import net.md_5.bungee.api.event.ServerKickEvent;
 import net.md_5.bungee.api.plugin.Listener;
 import net.md_5.bungee.api.plugin.Plugin;
 
@@ -31,6 +37,9 @@ public class BunJ2 extends Plugin implements Listener {
 
     private Set<String> admins;
     private Set<String> srstaff;
+    
+    private final String NOTICE = "[" + ChatColor.BLUE + "NOTICE" + ChatColor.RESET + "] ";
+    private final Map<ServerInfo, String> maintenanceMessages = new ConcurrentHashMap<ServerInfo, String>();
 
     public void adminReload() {
         final Map<Admin, Set<String>> map = SQLHandler.loadAdmins();
@@ -115,6 +124,44 @@ public class BunJ2 extends Plugin implements Listener {
             player.addGroups("admins");
         } else {
             player.addGroups("default");
+        }
+    }
+    
+    @Subscribe
+    public void onMessage(PluginMessageEvent event) {
+        if (event.getTag().equals("Maintenance")) {
+            try {
+                maintenanceMessages.put(((ProxiedPlayer) event.getSender()).getServer().getInfo(), new String(event.getData(), "UTF-8"));
+            } catch (UnsupportedEncodingException e) {
+                //Nope
+            }
+        }
+    }
+
+    @Subscribe
+    public void onKick(ServerKickEvent event) {
+        ServerInfo currentServer = event.getPlayer().getServer().getInfo();
+        if (currentServer != event.getCancelServer()) {
+            StringBuilder sb = new StringBuilder(NOTICE);
+            boolean catchKick = false;
+            switch (event.getKickReason()) {
+                case "We'll be back after these brief messages":
+                    sb.append(currentServer.getName() + " has shutdown.");
+                    catchKick = true;
+                    break;
+                case "Server entering maintenance mode":
+                    sb.append(currentServer.getName() + " has entered maintenance mode.");
+                    catchKick = true;
+                    break;
+            }
+            if (!catchKick && maintenanceMessages.containsValue(event.getKickReason())) {
+                sb.append(currentServer.getName() + " is in maintenance mode.");
+                catchKick = true;
+            }
+            if (catchKick) {
+                event.setCancelled(true);
+                event.getPlayer().sendMessage(sb.toString());
+            }
         }
     }
 
