@@ -1,6 +1,8 @@
 package to.joe.bungee;
 
-import java.io.UnsupportedEncodingException;
+import java.io.ByteArrayInputStream;
+import java.io.DataInputStream;
+import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
 import java.sql.SQLException;
@@ -70,6 +72,7 @@ public class BunJ2 extends Plugin implements Listener {
 
     @Override
     public void onEnable() {
+        getProxy().registerChannel("SeniorFun");
         this.conf.load();
         ProxyServer.getInstance().getPluginManager().registerCommand(this, new CommandBanIP());
         ProxyServer.getInstance().getPluginManager().registerCommand(this, new CommandIP());
@@ -124,10 +127,15 @@ public class BunJ2 extends Plugin implements Listener {
     
     @Subscribe
     public void onMessage(PluginMessageEvent event) {
-        if (event.getTag().equals("Maintenance")) {
+        getProxy().getLogger().info("Received a message!");
+        getProxy().getLogger().info(event.getTag());
+        if (event.getTag().equals("SeniorFun")) {
+            DataInputStream in = new DataInputStream(new ByteArrayInputStream(event.getData()));
             try {
-                maintenanceMessages.put(((ProxiedPlayer) event.getSender()).getServer().getInfo(), new String(event.getData(), "UTF-8"));
-            } catch (UnsupportedEncodingException e) {
+                if (in.readUTF().equals("Maintenance")) {
+                    maintenanceMessages.put(((ProxiedPlayer) event.getSender()).getServer().getInfo(), in.readUTF());
+                }
+            } catch (IOException e) {
                 //Nope
             }
         }
@@ -135,6 +143,8 @@ public class BunJ2 extends Plugin implements Listener {
 
     @Subscribe
     public void onKick(ServerKickEvent event) {
+        getProxy().getLogger().info("Kicked!");
+        getProxy().getLogger().info(event.getKickReason());
         ServerInfo currentServer = event.getPlayer().getServer().getInfo();
         if (currentServer != event.getCancelServer()) {
             StringBuilder sb = new StringBuilder(NOTICE);
