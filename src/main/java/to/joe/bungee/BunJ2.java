@@ -1,8 +1,5 @@
 package to.joe.bungee;
 
-import java.io.ByteArrayInputStream;
-import java.io.DataInputStream;
-import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
 import java.sql.SQLException;
@@ -10,14 +7,12 @@ import java.util.Map;
 import java.util.Set;
 import java.util.Timer;
 import java.util.TimerTask;
-import java.util.concurrent.ConcurrentHashMap;
 
 import net.md_5.bungee.api.ChatColor;
 import net.md_5.bungee.api.ProxyServer;
 import net.md_5.bungee.api.config.ServerInfo;
 import net.md_5.bungee.api.connection.ProxiedPlayer;
 import net.md_5.bungee.api.event.LoginEvent;
-import net.md_5.bungee.api.event.PluginMessageEvent;
 import net.md_5.bungee.api.event.PostLoginEvent;
 import net.md_5.bungee.api.event.ServerKickEvent;
 import net.md_5.bungee.api.plugin.Listener;
@@ -42,7 +37,6 @@ public class BunJ2 extends Plugin implements Listener {
     private Set<String> srstaff;
     
     private final String NOTICE = "[" + ChatColor.BLUE + "NOTICE" + ChatColor.RESET + "] ";
-    private final Map<ServerInfo, String> maintenanceMessages = new ConcurrentHashMap<ServerInfo, String>();
 
     public void adminReload() {
         final Map<Admin, Set<String>> map = SQLHandler.loadAdmins();
@@ -72,7 +66,6 @@ public class BunJ2 extends Plugin implements Listener {
 
     @Override
     public void onEnable() {
-        getProxy().registerChannel("SeniorFun");
         this.conf.load();
         ProxyServer.getInstance().getPluginManager().registerCommand(this, new CommandBanIP());
         ProxyServer.getInstance().getPluginManager().registerCommand(this, new CommandIP());
@@ -124,22 +117,6 @@ public class BunJ2 extends Plugin implements Listener {
             player.addGroups("default");
         }
     }
-    
-    @Subscribe
-    public void onMessage(PluginMessageEvent event) {
-        getProxy().getLogger().info("Received a message!");
-        getProxy().getLogger().info(event.getTag());
-        if (event.getTag().equals("SeniorFun")) {
-            DataInputStream in = new DataInputStream(new ByteArrayInputStream(event.getData()));
-            try {
-                if (in.readUTF().equals("Maintenance")) {
-                    maintenanceMessages.put(((ProxiedPlayer) event.getSender()).getServer().getInfo(), in.readUTF());
-                }
-            } catch (IOException e) {
-                //Nope
-            }
-        }
-    }
 
     @Subscribe
     public void onKick(ServerKickEvent event) {
@@ -158,10 +135,6 @@ public class BunJ2 extends Plugin implements Listener {
                     sb.append(currentServer.getName() + " has entered maintenance mode.");
                     catchKick = true;
                     break;
-            }
-            if (!catchKick && maintenanceMessages.containsValue(event.getKickReason())) {
-                sb.append(currentServer.getName() + " is in maintenance mode.");
-                catchKick = true;
             }
             if (catchKick) {
                 event.setCancelled(true);
