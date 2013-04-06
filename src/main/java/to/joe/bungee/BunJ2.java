@@ -17,9 +17,6 @@ import net.md_5.bungee.api.event.PostLoginEvent;
 import net.md_5.bungee.api.event.ServerKickEvent;
 import net.md_5.bungee.api.plugin.Listener;
 import net.md_5.bungee.api.plugin.Plugin;
-
-import com.google.common.eventbus.Subscribe;
-
 import to.joe.bungee.commands.CommandAlert;
 import to.joe.bungee.commands.CommandBanIP;
 import to.joe.bungee.commands.CommandIP;
@@ -28,6 +25,8 @@ import to.joe.bungee.commands.CommandReloadAdmins;
 import to.joe.bungee.commands.CommandServer;
 import to.joe.bungee.commands.CommandUnbanIP;
 
+import com.google.common.eventbus.Subscribe;
+
 public class BunJ2 extends Plugin implements Listener {
 
     private final Conf conf = new Conf(); // My own adaptation of a yaml config. VERY simple.
@@ -35,7 +34,7 @@ public class BunJ2 extends Plugin implements Listener {
 
     private Set<String> admins;
     private Set<String> srstaff;
-    
+
     private final String NOTICE = "[" + ChatColor.BLUE + "NOTICE" + ChatColor.RESET + "] ";
 
     public void adminReload() {
@@ -43,12 +42,12 @@ public class BunJ2 extends Plugin implements Listener {
         this.admins = map.get(Admin.ADMIN);
         this.srstaff = map.get(Admin.SRSTAFF);
         for (final ProxiedPlayer con : ProxyServer.getInstance().getPlayers()) {
-            con.removeGroups("admin", "srstaff", "default");
+            con.removeGroups("admins", "srstaff", "default");
             final String name = con.getName().toLowerCase();
             if (this.srstaff.contains(name)) {
                 con.addGroups("srstaff");
             } else if (this.admins.contains(name)) {
-                con.addGroups("admin");
+                con.addGroups("admins");
             } else {
                 con.addGroups("default");
             }
