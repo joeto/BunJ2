@@ -17,6 +17,7 @@ import net.md_5.bungee.api.event.PostLoginEvent;
 import net.md_5.bungee.api.event.ServerKickEvent;
 import net.md_5.bungee.api.plugin.Listener;
 import net.md_5.bungee.api.plugin.Plugin;
+import net.md_5.bungee.event.EventHandler;
 import to.joe.bungee.commands.CommandAlert;
 import to.joe.bungee.commands.CommandBanIP;
 import to.joe.bungee.commands.CommandIP;
@@ -24,8 +25,6 @@ import to.joe.bungee.commands.CommandList;
 import to.joe.bungee.commands.CommandReloadAdmins;
 import to.joe.bungee.commands.CommandServer;
 import to.joe.bungee.commands.CommandUnbanIP;
-
-import com.google.common.eventbus.Subscribe;
 
 public class BunJ2 extends Plugin implements Listener {
 
@@ -89,7 +88,7 @@ public class BunJ2 extends Plugin implements Listener {
         }, 1, 60000);
     }
 
-    @Subscribe
+    @EventHandler
     public void onLogin(LoginEvent event) {
         this.check(event);
         final String username = event.getConnection().getName();
@@ -105,7 +104,7 @@ public class BunJ2 extends Plugin implements Listener {
         }, 1);
     }
 
-    @Subscribe
+    @EventHandler
     public void onJoin(PostLoginEvent event) {
         final ProxiedPlayer player = event.getPlayer();
         if (this.srstaff.contains(player.getName().toLowerCase())) {
@@ -117,7 +116,7 @@ public class BunJ2 extends Plugin implements Listener {
         }
     }
 
-    @Subscribe
+    @EventHandler
     public void onKick(ServerKickEvent event) {
         getProxy().getLogger().info("Kicked!");
         getProxy().getLogger().info(event.getKickReason());
