@@ -5,7 +5,6 @@ import net.md_5.bungee.api.CommandSender;
 import net.md_5.bungee.api.ProxyServer;
 import net.md_5.bungee.api.connection.ProxiedPlayer;
 import net.md_5.bungee.api.plugin.Command;
-
 import to.joe.bungee.Util;
 
 public class CommandAlert extends Command {
@@ -23,7 +22,7 @@ public class CommandAlert extends Command {
             final String normal = "[" + ChatColor.BLUE + "ALERT" + ChatColor.RESET + "] " + message;
             final String admin = "[" + ChatColor.BLUE + sender.getName() + ChatColor.RESET + "] " + message;
             for (final ProxiedPlayer con : ProxyServer.getInstance().getPlayers()) {
-                con.sendMessage(con.hasPermission("j2.admin") ? normal : admin);
+                con.sendMessage(con.hasPermission("j2.admin") ? admin : normal);
             }
         }
     }
