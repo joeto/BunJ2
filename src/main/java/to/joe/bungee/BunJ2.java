@@ -3,6 +3,8 @@ package to.joe.bungee;
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
 import java.sql.SQLException;
+import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.Timer;
@@ -13,11 +15,14 @@ import net.md_5.bungee.api.ProxyServer;
 import net.md_5.bungee.api.config.ServerInfo;
 import net.md_5.bungee.api.connection.ProxiedPlayer;
 import net.md_5.bungee.api.event.LoginEvent;
+import net.md_5.bungee.api.event.PlayerDisconnectEvent;
 import net.md_5.bungee.api.event.PostLoginEvent;
+import net.md_5.bungee.api.event.ServerConnectedEvent;
 import net.md_5.bungee.api.event.ServerKickEvent;
 import net.md_5.bungee.api.plugin.Listener;
 import net.md_5.bungee.api.plugin.Plugin;
 import net.md_5.bungee.event.EventHandler;
+
 import to.joe.bungee.commands.CommandAlert;
 import to.joe.bungee.commands.CommandBanIP;
 import to.joe.bungee.commands.CommandIP;
@@ -30,6 +35,7 @@ public class BunJ2 extends Plugin implements Listener {
 
     private final Conf conf = new Conf(); // My own adaptation of a yaml config. VERY simple.
     private final Timer fiveMins = new Timer(); // I schedule a task that runs every 5 minutes!
+    private final HashMap<String, String> alerts = new HashMap<String, String>(); // jamietech hates alts
 
     private Set<String> admins;
     private Set<String> srstaff;
@@ -89,6 +95,24 @@ public class BunJ2 extends Plugin implements Listener {
     }
 
     @EventHandler
+    public void onServerChange(ServerConnectedEvent event) {
+        final String username = event.getPlayer().getName();
+        if (this.alerts.containsKey(username)) {
+            final String message = this.alerts.get(username);
+            for (final ProxiedPlayer player : this.getProxy().getPlayers()) {
+                if ((player.getServer() == event.getServer()) && player.hasPermission("j2.admin")) {
+                    player.sendMessage(message);
+                }
+            }
+        }
+    }
+
+    @EventHandler
+    public void onQuit(PlayerDisconnectEvent event) {
+        alerts.remove(event.getPlayer().getName());
+    }
+
+    @EventHandler
     public void onLogin(LoginEvent event) {
         this.check(event);
         final String username = event.getConnection().getName();
@@ -98,6 +122,23 @@ public class BunJ2 extends Plugin implements Listener {
             public void run() {
                 try {
                     SQLHandler.track(username, ip);
+                    // Check for alts
+                    final List<String> users = SQLHandler.matches(username);
+                    final int amount = users.size();
+                    if (amount != 0) {
+                        final StringBuilder sb = new StringBuilder(); // mbaxter has alts! __bob__, PlantAssassin, inermotion and 4 more...
+                        for (int i = 0; i < amount; i++) {
+                            sb.append(ChatColor.AQUA).append(ChatColor.ITALIC).append(users.get(i)).append(ChatColor.RESET).append(ChatColor.DARK_AQUA).append(", ");
+                            if (i == 3) {
+                                break;
+                            }
+                        }
+                        sb.setLength(sb.length() - 2);
+                        if (amount > 3) {
+                            sb.append(ChatColor.GRAY + " and " + ChatColor.DARK_GRAY + (amount - 3) + ChatColor.GRAY + " more...");
+                        }
+                        BunJ2.this.alerts.put(username, ChatColor.AQUA + username + " has alts! " + sb.toString());
+                    }
                 } catch (final SQLException e) {
                 }
             }
@@ -118,11 +159,11 @@ public class BunJ2 extends Plugin implements Listener {
 
     @EventHandler
     public void onKick(ServerKickEvent event) {
-        getProxy().getLogger().info("Kicked!");
-        getProxy().getLogger().info(event.getKickReason());
-        ServerInfo currentServer = event.getPlayer().getServer().getInfo();
+        this.getProxy().getLogger().info("Kicked!");
+        this.getProxy().getLogger().info(event.getKickReason());
+        final ServerInfo currentServer = event.getPlayer().getServer().getInfo();
         if (currentServer != event.getCancelServer()) {
-            StringBuilder sb = new StringBuilder(NOTICE);
+            final StringBuilder sb = new StringBuilder(this.NOTICE);
             boolean catchKick = false;
             switch (event.getKickReason()) {
                 case "We'll be back after these brief messages":

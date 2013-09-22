@@ -30,6 +30,31 @@ public class SQLHandler {
         con.myWorkHereIsDone();
     }
 
+    public static List<String> matches(String username) {
+        final ArrayList<String> list = new ArrayList<String>();
+        try {
+            final SQLConnection con = SQLHandler.instance().manager.getQueryConnection();
+            PreparedStatement statement = con.getConnection().prepareStatement("SELECT `IP` FROM `alias` WHERE `Name`=? ORDER BY `Time` desc LIMIT 1");
+            statement.setString(1, username);
+            ResultSet resultset = statement.executeQuery();
+            String ip = null;
+            if (resultset.next()) {
+                ip = resultset.getString("IP");
+            }
+            if (ip != null) {
+                statement = con.getConnection().prepareStatement("SELECT `Name`, `Time` FROM `alias` WHERE `IP`=? ORDER BY `Time` DESC");
+                statement.setString(1, ip);
+                resultset = statement.executeQuery();
+                while (resultset.next()) {
+                    list.add(resultset.getString("Name"));
+                }
+            }
+            con.myWorkHereIsDone();
+        } catch (final Exception e) {
+        }
+        return list;
+    }
+
     public static List<String> iplookup(String username) {
         final ArrayList<String> list = new ArrayList<String>();
         try {
